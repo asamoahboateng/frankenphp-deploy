@@ -133,6 +133,57 @@ ADMINER_DOMAIN=adminer.myapp.test
 - **Redis** - Cache and session storage
 - **Queue Worker** - Laravel queue processing
 - **Adminer** - Database management UI
+- **Typesense** - Search engine (optional)
+
+## Optional Services
+
+### Typesense (Search Engine)
+
+Typesense is included by default but is optional. It's useful for Laravel Scout integration.
+
+#### To use Typesense:
+
+1. Set your API key in `zd_server_franken/.env`:
+   ```env
+   TYPESENSE_API_KEY=your-secure-api-key
+   ```
+
+2. Add to your Laravel `.env`:
+   ```env
+   SCOUT_DRIVER=typesense
+   TYPESENSE_HOST=typesense
+   TYPESENSE_PORT=8108
+   TYPESENSE_PROTOCOL=http
+   TYPESENSE_API_KEY=your-secure-api-key
+   ```
+
+3. Install Laravel Scout with Typesense:
+   ```bash
+   composer require laravel/scout typesense/typesense-php
+   ```
+
+#### To remove Typesense:
+
+If you don't need search functionality, comment out or delete the Typesense service in your docker-compose files:
+
+**In `zd_server_franken/docker-compose-traefik.yml` and `docker-compose-standalone.yml`:**
+
+```yaml
+  # Comment out or delete this entire block:
+  # typesense:
+  #   image: typesense/typesense:27.1
+  #   container_name: myapp_typesense_franken
+  #   ...
+```
+
+Also remove the Typesense environment variables from the `frankenphp` service:
+```yaml
+  # Remove these lines:
+  # - TYPESENSE_HOST=typesense
+  # - TYPESENSE_PORT=8108
+  # - TYPESENSE_PROTOCOL=http
+  # - TYPESENSE_API_KEY=${TYPESENSE_API_KEY:-xyz123}
+```
 
 ## Publishing Config
 

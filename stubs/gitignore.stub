@@ -2,4 +2,5 @@
 pgsql-data/
 caddy_data/
 caddy_config/
+typesense-data/
 certs/local/
