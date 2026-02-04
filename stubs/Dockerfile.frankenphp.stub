@@ -1,0 +1,75 @@
+# FrankenPHP with Laravel Octane
+FROM dunglas/frankenphp:1-php8.4-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    icu-dev \
+    libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    zip \
+    unzip \
+    git \
+    nodejs \
+    npm \
+    bash \
+    linux-headers \
+    postgresql-dev
+
+# Install PHP extensions
+RUN install-php-extensions \
+    bcmath \
+    gd \
+    pdo_mysql \
+    pdo_pgsql \
+    pcntl \
+    intl \
+    zip \
+    sockets \
+    exif \
+    redis \
+    opcache
+
+# Configure GD with freetype and jpeg
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd
+
+# PHP configuration
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory-limit.ini \
+    && echo "upload_max_filesize=100M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=110M" >> /usr/local/etc/php/conf.d/uploads.ini
+
+# OPcache configuration for production
+RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=64" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=32531" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.save_comments=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.fast_shutdown=0" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+COPY . .
+
+# Install PHP dependencies
+RUN composer install --optimize-autoloader --no-scripts --no-cache
+
+# Install Node.js dependencies and build assets
+RUN npm install && npm run build
+
+# Copy Caddyfile
+COPY ./zd_server_franken/Caddyfile /etc/caddy/Caddyfile
+
+# Copy entrypoint script
+COPY ./zd_server_franken/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Expose ports (HTTP, HTTPS, and admin)
+EXPOSE 80 443 443/udp 2019
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -1,0 +1,152 @@
+services:
+  frankenphp:
+    build:
+      context: ..
+      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ROUTER_PREFIX}}.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.{{ROUTER_PREFIX}}.entrypoints=websecure"
+      - "traefik.http.routers.{{ROUTER_PREFIX}}.tls=true"
+      - "traefik.http.services.{{ROUTER_PREFIX}}.loadbalancer.server.port=8000"
+      - "traefik.docker.network={{TRAEFIK_NETWORK}}"
+    environment:
+      - APP_NAME=${APP_NAME:-Laravel}
+      - APP_ENV=local
+      - OCTANE_SERVER=frankenphp
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravelUser
+      - DB_PASSWORD=laravel@UserPassword
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis@root
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=redis
+      - APP_URL=${APP_URL}
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=email-smtp.us-east-1.amazonaws.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    volumes:
+      - ../:/app
+      - /app/vendor
+      # - /app/storage
+      - ./zd_server_franken/caddy_data:/data
+      - ./zd_server_franken/caddy_config:/config
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - {{NETWORK_NAME}}
+      - {{TRAEFIK_NETWORK}}
+
+  # Queue worker using the same FrankenPHP image
+  {{PROJECT_NAME}}_worker:
+    build:
+      context: ..
+      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+    container_name: {{WORKER_CONTAINER}}
+    restart: unless-stopped
+    entrypoint: ["php"]
+    command:
+      [
+        "artisan",
+        "queue:work",
+        "--queue=default",
+        "--sleep=3",
+        "--tries=3",
+        "--max-jobs=1000",
+      ]
+    volumes:
+      - ../:/app
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravelUser
+      - DB_PASSWORD=laravel@UserPassword
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis@root
+      - QUEUE_CONNECTION=redis
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=email-smtp.us-east-1.amazonaws.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    depends_on:
+      frankenphp:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - {{NETWORK_NAME}}
+
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    container_name: {{DB_CONTAINER}}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laravel
+      POSTGRES_USER: laravelUser
+      POSTGRES_PASSWORD: laravel@UserPassword
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laravelUser -d laravel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./pgsql-data:/var/lib/postgresql/data
+    networks:
+      - {{NETWORK_NAME}}
+
+  # Adminer for database management
+  adminer:
+    image: adminer
+    container_name: {{ADMINER_CONTAINER}}
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{PROJECT_NAME}}-adminer-franken.rule=Host(`${ADMINER_DOMAIN}`)"
+      - "traefik.http.routers.{{PROJECT_NAME}}-adminer-franken.entrypoints=websecure"
+      - "traefik.http.routers.{{PROJECT_NAME}}-adminer-franken.tls=true"
+      - "traefik.http.services.{{PROJECT_NAME}}-adminer-franken.loadbalancer.server.port=8080"
+      - "traefik.docker.network={{TRAEFIK_NETWORK}}"
+    networks:
+      - {{NETWORK_NAME}}
+      - {{TRAEFIK_NETWORK}}
+
+  # Redis cache
+  redis:
+    image: redis:alpine
+    container_name: {{REDIS_CONTAINER}}
+    restart: unless-stopped
+    command: redis-server --requirepass redis@root
+    networks:
+      - {{NETWORK_NAME}}
+
+networks:
+  {{NETWORK_NAME}}:
+    driver: bridge
+  {{TRAEFIK_NETWORK}}:
+    external: true

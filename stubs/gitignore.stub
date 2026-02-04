@@ -1,0 +1,5 @@
+.env
+pgsql-data/
+caddy_data/
+caddy_config/
+certs/local/

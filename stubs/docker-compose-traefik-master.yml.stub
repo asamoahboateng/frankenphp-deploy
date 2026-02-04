@@ -1,0 +1,41 @@
+# docker-compose-traefik-master.yml
+# Run this FIRST to start Traefik reverse proxy
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: {{TRAEFIK_CONTAINER}}
+    restart: always
+    environment:
+      - DOCKER_API_VERSION=1.44
+      - TRAEFIK_HOST=${TRAEFIK_HOST:-traefik.localhost}
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/dynamic_conf.yml"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./certs/${ENV_SPECIFIC_CERT_NAME}:/etc/traefik/certs/cert.pem:ro"
+      - "./certs/${ENV_SPECIFIC_KEY_NAME}:/etc/traefik/certs/key.pem:ro"
+      - "./dynamic_conf.yml:/etc/traefik/dynamic_conf.yml:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOST}`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$9PGgoG2E$$VwuFkN8PFIWcFwyJuucDq0"
+    networks:
+      - {{TRAEFIK_NETWORK}}
+
+networks:
+  {{TRAEFIK_NETWORK}}:
+    external: true

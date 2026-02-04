@@ -1,0 +1,146 @@
+# Standalone FrankenPHP setup (no Traefik required)
+# FrankenPHP handles SSL directly via Caddy
+services:
+  frankenphp:
+    build:
+      context: ..
+      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+    container_name: {{PROJECT_NAME}}_frankenphp
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 support
+    environment:
+      - APP_NAME=${APP_NAME:-Laravel}
+      - APP_ENV=local
+      - OCTANE_SERVER=frankenphp
+      - SERVER_NAME=${APP_DOMAIN}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravelUser
+      - DB_PASSWORD=laravel@UserPassword
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis@root
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=redis
+      - APP_URL=${APP_URL}
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=email-smtp.us-east-1.amazonaws.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    volumes:
+      - ../:/app
+      - /app/vendor
+      - /app/storage
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - {{NETWORK_NAME}}
+
+  # Queue worker
+  {{PROJECT_NAME}}_worker:
+    build:
+      context: ..
+      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+    container_name: {{WORKER_CONTAINER}}
+    restart: unless-stopped
+    entrypoint: ["php"]
+    command:
+      [
+        "artisan",
+        "queue:work",
+        "--queue=default",
+        "--sleep=3",
+        "--tries=3",
+        "--max-jobs=1000",
+      ]
+    volumes:
+      - ../:/app
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravelUser
+      - DB_PASSWORD=laravel@UserPassword
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis@root
+      - QUEUE_CONNECTION=redis
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=email-smtp.us-east-1.amazonaws.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    depends_on:
+      frankenphp:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - {{NETWORK_NAME}}
+
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    container_name: {{DB_CONTAINER}}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laravel
+      POSTGRES_USER: laravelUser
+      POSTGRES_PASSWORD: laravel@UserPassword
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laravelUser -d laravel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./pgsql-data:/var/lib/postgresql/data
+    networks:
+      - {{NETWORK_NAME}}
+
+  # Adminer for database management
+  adminer:
+    image: adminer
+    container_name: {{ADMINER_CONTAINER}}
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "8080:8080"
+    networks:
+      - {{NETWORK_NAME}}
+
+  # Redis cache
+  redis:
+    image: redis:alpine
+    container_name: {{REDIS_CONTAINER}}
+    restart: unless-stopped
+    command: redis-server --requirepass redis@root
+    networks:
+      - {{NETWORK_NAME}}
+
+networks:
+  {{NETWORK_NAME}}:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

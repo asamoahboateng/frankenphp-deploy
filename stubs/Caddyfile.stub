@@ -1,0 +1,58 @@
+{
+    # Global options
+    frankenphp
+    order php_server before file_server
+
+    # Disable automatic HTTPS (handled by Traefik)
+    auto_https off
+
+    # Admin API (optional, for health checks)
+    admin off
+}
+
+:8000 {
+    # Set the root directory
+    root * /app/public
+
+    # Enable compression
+    encode zstd br gzip
+
+    # Handle PHP requests with FrankenPHP worker mode
+    php_server {
+        # Worker mode for Laravel Octane
+        worker {
+            file /app/public/frankenphp-worker.php
+            num {$FRANKENPHP_WORKERS:-4}
+            watch /app/**/*.php
+        }
+    }
+
+    # Serve static files
+    file_server
+
+    # Handle Laravel routes
+    @notStatic {
+        # ADD *.html HERE
+        not path /build/* /vendor/* /storage/* *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.html
+
+        file {
+            try_files {path} {path}/ /index.php?{query}
+        }
+    }
+
+    # Logging
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+}

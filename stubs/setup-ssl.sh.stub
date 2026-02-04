@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Configuration - Change these to match your project
+DOMAIN="{{APP_DOMAIN}}"
+CERT_DIR="./certs/local"
+
+echo "Starting local SSL setup for $DOMAIN..."
+
+# Check if mkcert is installed
+if ! command -v mkcert &> /dev/null; then
+    echo "mkcert not found. Attempting to install..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        brew install mkcert
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        sudo apt update && sudo apt install -y mkcert || sudo yum install -y mkcert
+    else
+        echo "Unsupported OS. Please install mkcert manually."
+        exit 1
+    fi
+fi
+
+# Initialize the Local CA
+echo "Installing local CA (may require sudo password)..."
+mkcert -install
+
+# Create directory for certs
+mkdir -p "$CERT_DIR"
+
+# Generate the Wildcard Certificates
+echo "Generating certificates for $DOMAIN and *.$DOMAIN..."
+mkcert -key-file "$CERT_DIR/key.pem" \
+       -cert-file "$CERT_DIR/cert.pem" \
+       "$DOMAIN" "*.$DOMAIN" "localhost" "127.0.0.1"
+
+echo "----------------------------------------------------"
+echo "Success!"
+echo "Files created in $CERT_DIR:"
+echo " - cert.pem (The Certificate)"
+echo " - key.pem  (The Private Key)"
+echo ""
+echo "Next: Run the docker-compose commands to start services"
+echo "----------------------------------------------------"
