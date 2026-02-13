@@ -4,7 +4,7 @@ services:
   frankenphp:
     build:
       context: ..
-      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+      dockerfile: ./frankenphp_server/Dockerfile.frankenphp
     container_name: {{PROJECT_NAME}}_frankenphp
     restart: unless-stopped
     ports:
@@ -56,7 +56,7 @@ services:
   {{PROJECT_NAME}}_worker:
     build:
       context: ..
-      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+      dockerfile: ./frankenphp_server/Dockerfile.frankenphp
     container_name: {{WORKER_CONTAINER}}
     restart: unless-stopped
     entrypoint: ["php"]

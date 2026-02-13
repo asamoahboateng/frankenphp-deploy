@@ -26,13 +26,14 @@ php artisan frankenphp:install --domain=myapp.test --project=myapp
 ```
 
 This will create:
-- `zd_server_franken/` directory with Docker configuration files
+
+- `frankenphp_server/` directory with Docker configuration files
 - `pha` CLI script in your project root
 
 ## Setup SSL (Local Development)
 
 ```bash
-cd zd_server_franken
+cd frankenphp_server
 ./setup-ssl.sh
 ```
 
@@ -51,40 +52,44 @@ This uses `mkcert` to generate trusted local SSL certificates.
 ## Pha CLI Commands
 
 ### Lifecycle
-| Command | Description |
-|---------|-------------|
-| `./pha start` | Start with Traefik reverse proxy |
+
+| Command            | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `./pha start`      | Start with Traefik reverse proxy               |
 | `./pha standalone` | Start without Traefik (FrankenPHP handles SSL) |
-| `./pha stop` | Stop all containers |
-| `./pha reboot` | Restart all services |
-| `./pha reload` | Reload Octane workers (zero downtime) |
-| `./pha fresh` | Wipe and rebuild (local only) |
-| `./pha delete` | Remove all containers, images, volumes |
+| `./pha stop`       | Stop all containers                            |
+| `./pha reboot`     | Restart all services                           |
+| `./pha reload`     | Reload Octane workers (zero downtime)          |
+| `./pha fresh`      | Wipe and rebuild (local only)                  |
+| `./pha delete`     | Remove all containers, images, volumes         |
 
 ### Scaling
-| Command | Description |
-|---------|-------------|
+
+| Command           | Description                                 |
+| ----------------- | ------------------------------------------- |
 | `./pha scale [n]` | Scale to n replicas (e.g., `./pha scale 4`) |
 
 ### Development
-| Command | Description |
-|---------|-------------|
-| `./pha art [cmd]` | Run artisan command |
-| `./pha composer` | Run composer command |
-| `./pha npm` | Run npm command |
-| `./pha tinker` | Open Laravel tinker |
-| `./pha ssh` | Shell into container |
+
+| Command           | Description          |
+| ----------------- | -------------------- |
+| `./pha art [cmd]` | Run artisan command  |
+| `./pha composer`  | Run composer command |
+| `./pha npm`       | Run npm command      |
+| `./pha tinker`    | Open Laravel tinker  |
+| `./pha ssh`       | Shell into container |
 
 ### Monitoring
-| Command | Description |
-|---------|-------------|
-| `./pha ls` | List running containers |
-| `./pha logs` | Tail FrankenPHP logs |
-| `./pha status` | Show detailed status |
+
+| Command        | Description             |
+| -------------- | ----------------------- |
+| `./pha ls`     | List running containers |
+| `./pha logs`   | Tail FrankenPHP logs    |
+| `./pha status` | Show detailed status    |
 
 ## Configuration
 
-After installation, edit `zd_server_franken/.env` to customize:
+After installation, edit `frankenphp_server/.env` to customize:
 
 ```env
 APP_URL=https://myapp.test/
@@ -99,6 +104,7 @@ ADMINER_DOMAIN=adminer.myapp.test
 ## Architecture
 
 ### With Traefik (Multi-Project Setup)
+
 ```
 ┌─────────────┐
 │   Traefik   │ ← SSL termination, routing
@@ -115,6 +121,7 @@ ADMINER_DOMAIN=adminer.myapp.test
 ```
 
 ### Standalone (Single Project)
+
 ```
 ┌─────────────┐
 │ FrankenPHP  │ ← SSL via Caddy + Laravel Octane
@@ -143,12 +150,14 @@ Typesense is included by default but is optional. It's useful for Laravel Scout 
 
 #### To use Typesense:
 
-1. Set your API key in `zd_server_franken/.env`:
+1. Set your API key in `frankenphp_server/.env`:
+
    ```env
    TYPESENSE_API_KEY=your-secure-api-key
    ```
 
 2. Add to your Laravel `.env`:
+
    ```env
    SCOUT_DRIVER=typesense
    TYPESENSE_HOST=typesense
@@ -166,23 +175,24 @@ Typesense is included by default but is optional. It's useful for Laravel Scout 
 
 If you don't need search functionality, comment out or delete the Typesense service in your docker-compose files:
 
-**In `zd_server_franken/docker-compose-traefik.yml` and `docker-compose-standalone.yml`:**
+**In `frankenphp_server/docker-compose-traefik.yml` and `docker-compose-standalone.yml`:**
 
 ```yaml
-  # Comment out or delete this entire block:
-  # typesense:
-  #   image: typesense/typesense:27.1
-  #   container_name: myapp_typesense_franken
-  #   ...
+# Comment out or delete this entire block:
+# typesense:
+#   image: typesense/typesense:27.1
+#   container_name: myapp_typesense_franken
+#   ...
 ```
 
 Also remove the Typesense environment variables from the `frankenphp` service:
+
 ```yaml
-  # Remove these lines:
-  # - TYPESENSE_HOST=typesense
-  # - TYPESENSE_PORT=8108
-  # - TYPESENSE_PROTOCOL=http
-  # - TYPESENSE_API_KEY=${TYPESENSE_API_KEY:-xyz123}
+# Remove these lines:
+# - TYPESENSE_HOST=typesense
+# - TYPESENSE_PORT=8108
+# - TYPESENSE_PROTOCOL=http
+# - TYPESENSE_API_KEY=${TYPESENSE_API_KEY:-xyz123}
 ```
 
 ## Publishing Config

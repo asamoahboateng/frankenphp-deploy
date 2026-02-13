@@ -2,10 +2,10 @@ services:
   frankenphp:
     build:
       context: ..
-      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+      dockerfile: ./frankenphp_server/Dockerfile.frankenphp
     restart: unless-stopped
     deploy:
-      replicas: 1
+      replicas: ${REPLICAS}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.{{ROUTER_PREFIX}}.rule=Host(`${APP_DOMAIN}`)"
@@ -15,7 +15,7 @@ services:
       - "traefik.docker.network={{TRAEFIK_NETWORK}}"
     environment:
       - APP_NAME=${APP_NAME:-Laravel}
-      - APP_ENV=local
+      - APP_ENV=${APP_ENV:-local}
       - OCTANE_SERVER=frankenphp
       - DB_CONNECTION=pgsql
       - DB_HOST=db
@@ -43,8 +43,8 @@ services:
       - ../:/app
       - /app/vendor
       # - /app/storage
-      - ./zd_server_franken/caddy_data:/data
-      - ./zd_server_franken/caddy_config:/config
+      - ./frankenphp_server/caddy_data:/data
+      - ./frankenphp_server/caddy_config:/config
     depends_on:
       db:
         condition: service_healthy
@@ -58,7 +58,7 @@ services:
   {{PROJECT_NAME}}_worker:
     build:
       context: ..
-      dockerfile: ./zd_server_franken/Dockerfile.frankenphp
+      dockerfile: ./frankenphp_server/Dockerfile.frankenphp
     container_name: {{WORKER_CONTAINER}}
     restart: unless-stopped
     entrypoint: ["php"]

@@ -47,7 +47,7 @@ class InstallCommand extends Command
         $this->publishConfig();
 
         // 3. Create target directory
-        $targetDir = $this->laravel->basePath('zd_server_franken');
+        $targetDir = $this->laravel->basePath('frankenphp_server');
         File::ensureDirectoryExists($targetDir);
         File::ensureDirectoryExists($targetDir . '/certs/local');
         File::ensureDirectoryExists($targetDir . '/certs/prod');
@@ -81,8 +81,8 @@ class InstallCommand extends Command
         $this->components->info('FrankenPHP deployment scaffolding installed successfully!');
         $this->newLine();
         $this->line('  <fg=gray>Next steps:</>');
-        $this->line('  <options=bold>1.</> cd zd_server_franken && ./setup-ssl.sh');
-        $this->line('  <options=bold>2.</> Edit zd_server_franken/.env with your settings');
+        $this->line('  <options=bold>1.</> cd frankenphp_server && ./setup-ssl.sh');
+        $this->line('  <options=bold>2.</> Edit frankenphp_server/.env with your settings');
         $this->line('  <options=bold>3.</> ./pha start');
         $this->newLine();
 

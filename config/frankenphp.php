@@ -46,5 +46,5 @@ return [
     |
     */
 
-    'docker_directory' => 'zd_server_franken',
+    'docker_directory' => 'frankenphp_server',
 ];

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # --- 1. ENVIRONMENT LOAD ---
-if [ -f ./zd_server_franken/.env ]; then
-    export $(grep -v '^#' ./zd_server_franken/.env | xargs)
+if [ -f ./frankenphp_server/.env ]; then
+    export $(grep -v '^#' ./frankenphp_server/.env | xargs)
 fi
 
 # Configuration
@@ -15,9 +15,9 @@ DB_USER="laravelUser"
 DB_PASS="laravel@UserPassword"
 
 # Paths
-COMPOSE_FILE="./zd_server_franken/docker-compose-traefik.yml"
-TRAEFIK_COMPOSE="./zd_server_franken/docker-compose-traefik-master.yml"
-STANDALONE_COMPOSE="./zd_server_franken/docker-compose-standalone.yml"
+COMPOSE_FILE="./frankenphp_server/docker-compose-traefik.yml"
+TRAEFIK_COMPOSE="./frankenphp_server/docker-compose-traefik-master.yml"
+STANDALONE_COMPOSE="./frankenphp_server/docker-compose-standalone.yml"
 
 # Infrastructure
 TRAEFIK_NETWORK="{{TRAEFIK_NETWORK}}"
@@ -67,7 +67,7 @@ pha_check_infrastructure() {
 
     if [ ! "$(docker ps -q -f name=^/${TRAEFIK_CONTAINER}$)" ]; then
         echo -e "${Y}Traefik missing. Starting master...${NC}"
-        docker compose -f "$TRAEFIK_COMPOSE" --env-file ./zd_server_franken/.env up -d
+        docker compose -f "$TRAEFIK_COMPOSE" --env-file ./frankenphp_server/.env up -d
     else
         echo -e "${G}Traefik active.${NC}"
     fi
@@ -82,7 +82,7 @@ pha_start() {
 
     export APP_DOMAIN="$DOMAIN"
     export APP_URL="https://$DOMAIN"
-    docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env up -d --build
+    docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env up -d --build
 }
 
 pha_start_standalone() {
@@ -91,7 +91,7 @@ pha_start_standalone() {
 
     export APP_DOMAIN="$DOMAIN"
     export APP_URL="https://$DOMAIN"
-    docker compose -f "$STANDALONE_COMPOSE" --env-file ./zd_server_franken/.env up -d --build
+    docker compose -f "$STANDALONE_COMPOSE" --env-file ./frankenphp_server/.env up -d --build
 }
 
 pha_reload() {
@@ -105,7 +105,7 @@ pha_reload() {
 
 pha_reboot() {
     echo -e "${Y}Restarting project services...${NC}"
-    docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env restart
+    docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env restart
     echo -e "${G}Services rebooted.${NC}"
 }
 
@@ -113,14 +113,14 @@ pha_scale() {
     NUM=$2
     [[ -z "$NUM" ]] && { echo -e "${R}Usage: ./pha scale 3${NC}"; exit 1; }
     export APP_DOMAIN="$DOMAIN"
-    docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env up -d --scale "$SERVICE_NAME=$NUM" --no-recreate
+    docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env up -d --scale "$SERVICE_NAME=$NUM" --no-recreate
 }
 
 pha_delete() {
     echo -e "${R}DANGER: Wiping Images, Volumes, and Cache.${NC}"
     read -p "Confirm? (y/N): " confirm
     if [[ $confirm == [yY] ]]; then
-        docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env down --rmi all -v
+        docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env down --rmi all -v
         docker builder prune --all --force
         echo -e "${G}Project wiped.${NC}"
     fi
@@ -129,7 +129,7 @@ pha_delete() {
 pha_status() {
     echo -e "${C}=== FrankenPHP Status ===${NC}"
     echo -e "${Y}Containers:${NC}"
-    docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env ps
+    docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env ps
     echo ""
     echo -e "${Y}Octane Workers:${NC}"
     NODE=$(get_node)
@@ -144,14 +144,14 @@ pha_status() {
 case "$1" in
     start)      pha_start ;;
     standalone) pha_start_standalone ;;
-    stop)       docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env down ;;
+    stop)       docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env down ;;
     reload)     pha_reload ;;
     reboot)     pha_reboot ;;
     scale)      pha_scale "$@" ;;
     delete)     pha_delete ;;
     fresh)      [[ "$APP_ENV" == "production" ]] && exit 1; pha_delete; pha_start ;;
-    ls)         docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env ps ;;
-    logs)       docker compose -f "$COMPOSE_FILE" --env-file ./zd_server_franken/.env logs -f $SERVICE_NAME ;;
+    ls)         docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env ps ;;
+    logs)       docker compose -f "$COMPOSE_FILE" --env-file ./frankenphp_server/.env logs -f $SERVICE_NAME ;;
     ssh)        docker exec -it $(get_node) bash || docker exec -it $(get_node) sh ;;
     art)        shift; docker exec -it $(get_node) php artisan "$@" ;;
     composer)   shift; docker exec -it $(get_node) composer "$@" ;;

@@ -63,10 +63,10 @@ RUN composer install --optimize-autoloader --no-scripts --no-cache
 RUN npm install && npm run build
 
 # Copy Caddyfile
-COPY ./zd_server_franken/Caddyfile /etc/caddy/Caddyfile
+COPY ./frankenphp_server/Caddyfile /etc/caddy/Caddyfile
 
 # Copy entrypoint script
-COPY ./zd_server_franken/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./frankenphp_server/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Expose ports (HTTP, HTTPS, and admin)
