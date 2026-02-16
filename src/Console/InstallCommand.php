@@ -5,6 +5,7 @@ namespace AsamoahBoateng\FrankenPhpDeploy\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Process\Process;
 
 #[AsCommand(name: 'frankenphp:install')]
 class InstallCommand extends Command
@@ -32,6 +33,11 @@ class InstallCommand extends Command
     public function handle(): int
     {
         $this->components->info('Installing FrankenPHP Docker deployment scaffolding...');
+
+        // 0. Ensure Laravel Octane with FrankenPHP is installed
+        if (! $this->ensureOctaneIsInstalled()) {
+            return self::FAILURE;
+        }
 
         // 1. Gather configuration interactively or from options
         $domain = $this->option('domain')
@@ -87,6 +93,39 @@ class InstallCommand extends Command
         $this->newLine();
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Ensure Laravel Octane with FrankenPHP is installed.
+     */
+    protected function ensureOctaneIsInstalled(): bool
+    {
+        if (class_exists(\Laravel\Octane\OctaneServiceProvider::class)) {
+            $this->components->info('Laravel Octane is already installed.');
+            return true;
+        }
+
+        if (! $this->confirm('Laravel Octane is not installed. Would you like to install it now?', true)) {
+            $this->components->error('Laravel Octane is required for FrankenPHP deployment.');
+            return false;
+        }
+
+        $this->components->info('Installing Laravel Octane...');
+
+        $command = ['composer', 'require', 'laravel/octane'];
+        $process = new Process($command, base_path());
+        $process->setTimeout(300);
+        $process->run(fn ($type, $output) => $this->output->write($output));
+
+        if (! $process->isSuccessful()) {
+            $this->components->error('Failed to install Laravel Octane via Composer.');
+            return false;
+        }
+
+        $this->components->info('Configuring Octane with FrankenPHP...');
+        $this->call('octane:install', ['--server' => 'frankenphp']);
+
+        return true;
     }
 
     /**
