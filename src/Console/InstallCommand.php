@@ -64,6 +64,7 @@ class InstallCommand extends Command
         $this->publishStub('docker-compose-standalone.yml.stub', $targetDir . '/docker-compose-standalone.yml', $replacements);
         $this->publishStub('docker-compose-traefik-master.yml.stub', $targetDir . '/docker-compose-traefik-master.yml', $replacements);
         $this->publishStub('Caddyfile.stub', $targetDir . '/Caddyfile', $replacements);
+        $this->publishStub('init.sh.stub', $targetDir . '/init.sh', $replacements);
         $this->publishStub('entrypoint.sh.stub', $targetDir . '/entrypoint.sh', $replacements);
         $this->publishStub('setup-ssl.sh.stub', $targetDir . '/setup-ssl.sh', $replacements);
         $this->publishStub('dynamic_conf.yml.stub', $targetDir . '/dynamic_conf.yml', $replacements);
@@ -75,6 +76,7 @@ class InstallCommand extends Command
 
         // 6. Make scripts executable
         chmod($this->laravel->basePath('pha'), 0755);
+        chmod($targetDir . '/init.sh', 0755);
         chmod($targetDir . '/entrypoint.sh', 0755);
         chmod($targetDir . '/setup-ssl.sh', 0755);
 
@@ -145,6 +147,7 @@ class InstallCommand extends Command
             '{{DB_CONTAINER}}' => $project . '_db_franken',
             '{{REDIS_CONTAINER}}' => $project . '_redis_franken',
             '{{ADMINER_CONTAINER}}' => $project . '_adminer_franken',
+            '{{INIT_CONTAINER}}' => $project . '_init_franken',
             '{{TYPESENSE_CONTAINER}}' => $project . '_typesense_franken',
             '{{NETWORK_NAME}}' => $project . '_net',
             '{{ROUTER_PREFIX}}' => $project . '_app',

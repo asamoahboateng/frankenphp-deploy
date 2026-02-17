@@ -24,10 +24,6 @@ php artisan key:generate --force
 echo "Linking Storage..."
 php artisan storage:link 2>/dev/null || true
 
-# Run migrations (optional - comment out if not needed)
-# echo "Running migrations..."
-# php artisan migrate --force
-
 # Clear and cache config for production
 if [ "$APP_ENV" = "production" ]; then
     echo "Optimizing for production..."

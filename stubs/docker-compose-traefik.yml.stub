@@ -1,4 +1,32 @@
 services:
+  # Init service - runs composer install and migrations before main app starts
+  init:
+    build:
+      context: ..
+      dockerfile: ./frankenphp_server/Dockerfile.frankenphp
+    container_name: {{INIT_CONTAINER}}
+    entrypoint: ["/bin/sh", "/app/frankenphp_server/init.sh"]
+    volumes:
+      - ../:/app
+    environment:
+      - APP_ENV=${APP_ENV:-local}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravelUser
+      - DB_PASSWORD=laravel@UserPassword
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis@root
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: "no"
+    networks:
+      - {{NETWORK_NAME}}
+
   frankenphp:
     build:
       context: ..
@@ -46,10 +74,8 @@ services:
       - ./frankenphp_server/caddy_data:/data
       - ./frankenphp_server/caddy_config:/config
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      init:
+        condition: service_completed_successfully
     networks:
       - {{NETWORK_NAME}}
       - {{TRAEFIK_NETWORK}}
