@@ -116,6 +116,10 @@ ADMINER_DOMAIN=adminer.myapp.test
 └──────┬──────┘
        │
 ┌──────┴──────┐
+│    Init     │ ← composer install, migrations
+└──────┬──────┘
+       │
+┌──────┴──────┐
 │  Services   │ ← PostgreSQL, Redis, Queue Worker
 └─────────────┘
 ```
@@ -129,18 +133,37 @@ ADMINER_DOMAIN=adminer.myapp.test
 └──────┬──────┘
        │
 ┌──────┴──────┐
+│    Init     │ ← composer install, migrations
+└──────┬──────┘
+       │
+┌──────┴──────┐
 │  Services   │ ← PostgreSQL, Redis, Queue Worker
 └─────────────┘
 ```
 
 ## Services Included
 
+- **Init** - Runs before the app starts to install Composer dependencies and execute database migrations
 - **FrankenPHP** - High-performance PHP application server with Caddy
 - **PostgreSQL 16** - Database
 - **Redis** - Cache and session storage
 - **Queue Worker** - Laravel queue processing
 - **Adminer** - Database management UI
 - **Typesense** - Search engine (optional)
+
+## Init Service
+
+The `init` service is a one-shot container that runs **before** the main FrankenPHP application starts. It ensures your environment is ready by performing:
+
+1. **Composer install** - installs/updates PHP dependencies (`composer install --optimize-autoloader`)
+2. **Database migrations** - runs `php artisan migrate --force`
+3. **Storage link** - creates the public storage symlink
+
+The startup order is: `db/redis → init → frankenphp → worker`
+
+The init container uses the same Docker image as the app, exits after completing its tasks, and will not restart. If it fails (e.g., a migration error), the main app will not start — allowing you to fix the issue before the app serves traffic.
+
+To customize what the init service runs, edit `frankenphp_server/init.sh`.
 
 ## Optional Services
 
