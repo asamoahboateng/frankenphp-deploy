@@ -169,6 +169,31 @@ services:
     networks:
       - {{NETWORK_NAME}}
 
+  # Weekly database backup - deletes old backup and creates a fresh pg_dump
+  db_backup:
+    image: postgres:16-alpine
+    container_name: {{BACKUP_CONTAINER}}
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          echo "[$(date)] Starting weekly backup..."
+          rm -f /backups/*.sql.gz
+          PGPASSWORD=laravel@UserPassword pg_dump -h db -U laravelUser -d laravel | gzip > /backups/backup_$(date +%Y%m%d_%H%M%S).sql.gz
+          echo "[$(date)] Backup complete. Next backup in 7 days."
+          sleep 604800
+        done
+    environment:
+      PGPASSWORD: laravel@UserPassword
+    volumes:
+      - ./db-backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - {{NETWORK_NAME}}
+
   # Adminer for database management
   adminer:
     image: adminer

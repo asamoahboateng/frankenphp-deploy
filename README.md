@@ -123,6 +123,19 @@ ADMINER_DOMAIN=adminer.myapp.test
 
 ## Architecture
 
+### Standalone vs Traefik
+
+| | Standalone (`./pha standalone`) | Traefik (`./pha start`) |
+|---|---|---|
+| **SSL** | FrankenPHP/Caddy handles SSL directly | Traefik terminates SSL, proxies to FrankenPHP |
+| **Ports** | Exposes 80, 443, 443/udp (HTTP/3) | No ports exposed — Traefik routes traffic |
+| **Multi-project** | One app per server | Multiple apps on the same server |
+| **Scaling** | Single container | Horizontal scaling via `replicas` |
+| **Cert management** | Caddy auto-manages or uses local certs | `cert_loader` copies certs to shared Traefik volumes |
+| **Adminer** | Exposed on port 8080 | Routed via `adminer.yourdomain.com` |
+
+Use **standalone** for a single app on a server (simpler, fewer moving parts). Use **Traefik** when you need multiple apps sharing ports 80/443 or horizontal scaling.
+
 ### With Traefik (Multi-Project Setup)
 
 ```
@@ -140,7 +153,7 @@ ADMINER_DOMAIN=adminer.myapp.test
 └──────┬──────┘
        │
 ┌──────┴──────┐
-│  Services   │ ← PostgreSQL, Redis, Queue Worker
+│  Services   │ ← PostgreSQL, Redis, Queue Worker, DB Backup
 └─────────────┘
 ```
 
@@ -157,7 +170,7 @@ ADMINER_DOMAIN=adminer.myapp.test
 └──────┬──────┘
        │
 ┌──────┴──────┐
-│  Services   │ ← PostgreSQL, Redis, Queue Worker
+│  Services   │ ← PostgreSQL, Redis, Queue Worker, DB Backup
 └─────────────┘
 ```
 
@@ -168,6 +181,7 @@ ADMINER_DOMAIN=adminer.myapp.test
 - **PostgreSQL 16** - Database
 - **Redis** - Cache and session storage
 - **Queue Worker** - Laravel queue processing
+- **DB Backup** - Weekly PostgreSQL backup with automatic old backup cleanup
 - **Adminer** - Database management UI
 - **Typesense** - Search engine (optional)
 
@@ -184,6 +198,23 @@ The startup order is: `db/redis → init → frankenphp → worker`
 The init container uses the same Docker image as the app, exits after completing its tasks, and will not restart. If it fails (e.g., a migration error), the main app will not start — allowing you to fix the issue before the app serves traffic.
 
 To customize what the init service runs, edit `frankenphp_server/init.sh`.
+
+## Database Backups
+
+The `db_backup` service runs alongside your app and performs a weekly `pg_dump` of the PostgreSQL database. Each time it runs, it deletes the previous backup and creates a fresh compressed dump.
+
+Backups are stored in `frankenphp_server/db-backups/` on the host:
+
+```
+frankenphp_server/db-backups/
+└── backup_20260222_030000.sql.gz
+```
+
+To restore from a backup:
+
+```bash
+gunzip -c frankenphp_server/db-backups/backup_*.sql.gz | docker exec -i <db_container> psql -U laravelUser -d laravel
+```
 
 ## Optional Services
 

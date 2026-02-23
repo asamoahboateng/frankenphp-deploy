@@ -148,6 +148,7 @@ class InstallCommand extends Command
             '{{REDIS_CONTAINER}}' => $project . '_redis_franken',
             '{{ADMINER_CONTAINER}}' => $project . '_adminer_franken',
             '{{INIT_CONTAINER}}' => $project . '_init_franken',
+            '{{BACKUP_CONTAINER}}' => $project . '_backup_franken',
             '{{TYPESENSE_CONTAINER}}' => $project . '_typesense_franken',
             '{{NETWORK_NAME}}' => $project . '_net',
             '{{ROUTER_PREFIX}}' => $project . '_app',
