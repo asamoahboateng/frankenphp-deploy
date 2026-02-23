@@ -23,6 +23,9 @@ php artisan frankenphp:install
 
 # Or with options
 php artisan frankenphp:install --domain=myapp.test --project=myapp
+
+# With pgvector support (vector similarity search)
+php artisan frankenphp:install --domain=myapp.test --project=myapp --pgvector
 ```
 
 This will create:
@@ -178,7 +181,7 @@ Use **standalone** for a single app on a server (simpler, fewer moving parts). U
 
 - **Init** - Runs before the app starts to install Composer dependencies and execute database migrations
 - **FrankenPHP** - High-performance PHP application server with Caddy
-- **PostgreSQL 16** - Database
+- **PostgreSQL 16** - Database (optionally with pgvector for vector similarity search)
 - **Redis** - Cache and session storage
 - **Queue Worker** - Laravel queue processing
 - **DB Backup** - Weekly PostgreSQL backup with automatic old backup cleanup
@@ -215,6 +218,22 @@ To restore from a backup:
 ```bash
 gunzip -c frankenphp_server/db-backups/backup_*.sql.gz | docker exec -i <db_container> psql -U laravelUser -d laravel
 ```
+
+## pgvector (Vector Search)
+
+To enable vector similarity search, use the `--pgvector` flag during installation:
+
+```bash
+php artisan frankenphp:install --pgvector
+```
+
+This switches the database image from `postgres:16-alpine` to `pgvector/pgvector:pg16`. After starting the containers, enable the extension in your database:
+
+```sql
+CREATE EXTENSION vector;
+```
+
+This is useful for AI/ML applications that need to store and query vector embeddings (e.g., with Laravel Scout or custom similarity search).
 
 ## Optional Services
 

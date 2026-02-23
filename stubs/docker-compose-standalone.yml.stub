@@ -127,7 +127,7 @@ services:
 
   # PostgreSQL database
   db:
-    image: postgres:16-alpine
+    image: {{DB_IMAGE}}
     container_name: {{DB_CONTAINER}}
     restart: unless-stopped
     environment:
@@ -148,7 +148,7 @@ services:
 
   # Weekly database backup - deletes old backup and creates a fresh pg_dump
   db_backup:
-    image: postgres:16-alpine
+    image: {{DB_IMAGE}}
     container_name: {{BACKUP_CONTAINER}}
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]

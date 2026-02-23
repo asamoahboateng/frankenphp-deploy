@@ -18,7 +18,8 @@ class InstallCommand extends Command
     protected $signature = 'frankenphp:install
                             {--domain= : The application domain (e.g., myapp.test)}
                             {--project= : The compose project name (e.g., myapp)}
-                            {--force : Overwrite existing files}';
+                            {--force : Overwrite existing files}
+                            {--pgvector : Use pgvector/pgvector:pg16 instead of postgres:16-alpine}';
 
     /**
      * The console command description.
@@ -48,6 +49,11 @@ class InstallCommand extends Command
 
         // Derive related values
         $replacements = $this->buildReplacements($domain, $project);
+
+        // Database image selection
+        $pgvector = $this->option('pgvector')
+            || $this->confirm('Enable pgvector for vector similarity search?', false);
+        $replacements['{{DB_IMAGE}}'] = $pgvector ? 'pgvector/pgvector:pg16' : 'postgres:16-alpine';
 
         // 2. Publish config if not already present
         $this->publishConfig();
