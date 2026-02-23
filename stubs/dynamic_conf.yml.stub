@@ -1,10 +1,7 @@
-# dynamic_conf.yml
+# dynamic_conf.yml - TLS certificate config for {{PROJECT_NAME}}
+# This file is mounted into Traefik's dynamic config directory.
+# Each project provides its own dynamic_conf with its certificate paths.
 tls:
   certificates:
-    - certFile: /etc/traefik/certs/cert.pem
-      keyFile: /etc/traefik/certs/key.pem
-  stores:
-    default:
-      defaultCertificate:
-        certFile: /etc/traefik/certs/cert.pem
-        keyFile: /etc/traefik/certs/key.pem
+    - certFile: /etc/traefik/certs/{{PROJECT_NAME}}/cert.pem
+      keyFile: /etc/traefik/certs/{{PROJECT_NAME}}/key.pem

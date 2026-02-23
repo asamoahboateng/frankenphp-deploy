@@ -27,6 +27,27 @@ services:
     networks:
       - {{NETWORK_NAME}}
 
+  # Copies project certs and dynamic config into shared Traefik volumes
+  cert_loader:
+    image: alpine:3.20
+    container_name: {{PROJECT_NAME}}_cert_loader
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /certs/{{PROJECT_NAME}}
+        cp /project-certs/cert.pem /certs/{{PROJECT_NAME}}/cert.pem
+        cp /project-certs/key.pem /certs/{{PROJECT_NAME}}/key.pem
+        cp /project-dynamic/dynamic_conf.yml /dynamic/{{PROJECT_NAME}}.yml
+        echo "Certs and dynamic config loaded for {{PROJECT_NAME}}"
+    volumes:
+      - ./certs/${APP_ENV:-local}:/project-certs:ro
+      - ./dynamic_conf.yml:/project-dynamic/dynamic_conf.yml:ro
+      - traefik_certs:/certs
+      - traefik_dynamic:/dynamic
+    restart: "no"
+    networks:
+      - {{NETWORK_NAME}}
+
   frankenphp:
     build:
       context: ..
@@ -194,4 +215,10 @@ networks:
   {{NETWORK_NAME}}:
     driver: bridge
   {{TRAEFIK_NETWORK}}:
+    external: true
+
+volumes:
+  traefik_certs:
+    external: true
+  traefik_dynamic:
     external: true

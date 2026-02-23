@@ -65,6 +65,10 @@ pha_check_infrastructure() {
         docker network create "$TRAEFIK_NETWORK"
     fi
 
+    # Ensure shared volumes exist for multi-domain cert support
+    docker volume create traefik_certs >/dev/null 2>&1
+    docker volume create traefik_dynamic >/dev/null 2>&1
+
     if [ ! "$(docker ps -q -f name=^/${TRAEFIK_CONTAINER}$)" ]; then
         echo -e "${Y}Traefik missing. Starting master...${NC}"
         docker compose -f "$TRAEFIK_COMPOSE" --env-file ./frankenphp_server/.env up -d
