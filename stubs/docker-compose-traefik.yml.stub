@@ -26,6 +26,7 @@ services:
     restart: "no"
     networks:
       - {{NETWORK_NAME}}
+      - {{TRAEFIK_NETWORK}}
 
   # Copies project certs and dynamic config into shared Traefik volumes
   cert_loader:
