@@ -13,11 +13,11 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=laravel
-      - DB_USERNAME=laravelUser
-      - DB_PASSWORD=laravel@UserPassword
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
-      - REDIS_PASSWORD=redis@root
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -69,11 +69,11 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=laravel
-      - DB_USERNAME=laravelUser
-      - DB_PASSWORD=laravel@UserPassword
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
-      - REDIS_PASSWORD=redis@root
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_CONNECTION=redis
       - SESSION_DRIVER=redis
       - APP_URL=${APP_URL}
@@ -125,11 +125,11 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=laravel
-      - DB_USERNAME=laravelUser
-      - DB_PASSWORD=laravel@UserPassword
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
-      - REDIS_PASSWORD=redis@root
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - QUEUE_CONNECTION=redis
       - MAIL_MAILER=smtp
       - MAIL_HOST=email-smtp.us-east-1.amazonaws.com
@@ -154,11 +154,11 @@ services:
     container_name: {{DB_CONTAINER}}
     restart: unless-stopped
     environment:
-      POSTGRES_DB: laravel
-      POSTGRES_USER: laravelUser
-      POSTGRES_PASSWORD: laravel@UserPassword
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U laravelUser -d laravel"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_PASSWORD} -d ${DB_DATABASE}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -180,12 +180,12 @@ services:
         while true; do
           echo "[$(date)] Starting weekly backup..."
           rm -f /backups/*.sql.gz
-          PGPASSWORD=laravel@UserPassword pg_dump -h db -U laravelUser -d laravel | gzip > /backups/backup_$(date +%Y%m%d_%H%M%S).sql.gz
+          PGPASSWORD=${DB_PASSWORD} pg_dump -h db -U ${DB_USERNAME} -d ${DB_DATABASE} | gzip > /backups/backup_$(date +%Y%m%d_%H%M%S).sql.gz
           echo "[$(date)] Backup complete. Next backup in 7 days."
           sleep 604800
         done
     environment:
-      PGPASSWORD: laravel@UserPassword
+      PGPASSWORD: ${DB_PASSWORD}
     volumes:
       - ./db-backups:/backups
     depends_on:
