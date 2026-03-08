@@ -15,4 +15,9 @@ php artisan migrate --force
 echo "Linking storage..."
 php artisan storage:link 2>/dev/null || true
 
+# running npm instal
+echo "Running npm install"
+npm instal
+npm run build
+
 echo "Init tasks completed successfully."
