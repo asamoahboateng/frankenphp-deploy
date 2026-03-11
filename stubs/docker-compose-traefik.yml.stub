@@ -27,6 +27,35 @@ services:
     networks:
       - {{NETWORK_NAME}}
       - {{TRAEFIK_NETWORK}}
+  
+  migrate:
+    build:
+      context: ..
+      dockerfile: ./frankenphp_server/Dockerfile.frankenphp
+    container_name: rxinventory_migrate
+    # We run config:clear first to ensure Spatie's migration reads the file correctly
+    entrypoint: >
+      /bin/sh -c "php artisan config:clear && 
+                  php artisan migrate --force"
+    volumes:
+      - ../:/app
+    environment:
+      - APP_ENV=${APP_ENV:-local}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    networks:
+      networks:
+      - {{NETWORK_NAME}}
+      - {{TRAEFIK_NETWORK}}
 
   # Copies project certs and dynamic config into shared Traefik volumes
   cert_loader:

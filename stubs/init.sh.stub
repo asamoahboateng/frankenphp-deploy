@@ -8,8 +8,8 @@ echo "Installing Composer dependencies..."
 composer install --optimize-autoloader --no-interaction --no-cache
 
 # Run database migrations
-echo "Running migrations..."
-php artisan migrate --force
+# echo "Running migrations..."
+# php artisan migrate --force
 
 # Link storage
 echo "Linking storage..."
